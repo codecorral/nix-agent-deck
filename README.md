@@ -107,6 +107,19 @@ programs.agent-deck = {
     fallbackToStdio = true;
     showPoolStatus = true;
   };
+
+  worktree.defaultLocation = "sibling"; # or "subdirectory" or a custom path
+
+  conductor = {
+    enable = true;
+    extraConfig = {
+      auto_respond = true;
+      telegram = {
+        bot_token = "123:ABC";
+        chat_id = "456";
+      };
+    };
+  };
 };
 ```
 
