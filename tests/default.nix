@@ -134,6 +134,22 @@ let
     };
   };
 
+  # Test: worktree section (issue #2)
+  worktreeConfig = getToml {
+    programs.agent-deck = {
+      enable = true;
+      worktree.defaultLocation = "subdirectory";
+    };
+  };
+
+  # Test: worktree with custom path
+  worktreeCustomConfig = getToml {
+    programs.agent-deck = {
+      enable = true;
+      worktree.defaultLocation = "/tmp/worktrees";
+    };
+  };
+
   # Assertion helpers
   assertEq = name: actual: expected:
     if actual == expected then true
@@ -241,7 +257,26 @@ in
       && (assertNoAttr "no mcps section" emptyConfig "mcps")
       && (assertNoAttr "no tools section" emptyConfig "tools")
       && (assertNoAttr "no profiles section" emptyConfig "profiles")
+      && (assertNoAttr "no worktree section" emptyConfig "worktree")
     ) ""}
     echo "empty section omission test passed" > $out
+  '';
+
+  # Worktree section test
+  worktree-section = pkgs.runCommand "test-worktree-section" { } ''
+    ${lib.optionalString (
+      (assertHasAttr "worktree section" worktreeConfig "worktree")
+      && (assertEq "default_location" worktreeConfig.worktree.default_location "subdirectory")
+    ) ""}
+    echo "worktree section test passed" > $out
+  '';
+
+  # Worktree custom path test
+  worktree-custom-path = pkgs.runCommand "test-worktree-custom-path" { } ''
+    ${lib.optionalString (
+      (assertHasAttr "worktree section" worktreeCustomConfig "worktree")
+      && (assertEq "custom default_location" worktreeCustomConfig.worktree.default_location "/tmp/worktrees")
+    ) ""}
+    echo "worktree custom path test passed" > $out
   '';
 }

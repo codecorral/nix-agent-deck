@@ -44,6 +44,7 @@ let
     fallbackToStdio = "fallback_to_stdio";
     showPoolStatus = "show_pool_status";
     defaultTool = "default_tool";
+    defaultLocation = "default_location";
   };
 
   # Map a key name using the explicit table, passthrough if not mapped
@@ -97,6 +98,9 @@ let
       };
       mcpPool = buildSection {
         inherit (cfg.mcpPool) enabled autoStart poolAll excludeMcps fallbackToStdio showPoolStatus;
+      };
+      worktree = buildSection {
+        inherit (cfg.worktree) defaultLocation;
       };
     }));
 
@@ -341,6 +345,15 @@ in
         type = types.nullOr types.bool;
         default = null;
         description = "Show pool status in CLI.";
+      };
+    };
+
+    # Worktree section
+    worktree = {
+      defaultLocation = mkOption {
+        type = types.nullOr (types.either (types.enum [ "sibling" "subdirectory" ]) types.str);
+        default = null;
+        description = ''Default worktree location: "sibling", "subdirectory", or a custom path.'';
       };
     };
 
