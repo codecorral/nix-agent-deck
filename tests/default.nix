@@ -1,15 +1,21 @@
 { pkgs, home-manager }:
 
 let
-  lib = pkgs.lib;
+  lib = pkgs.lib.extend (_: _: {
+    hm = import "${home-manager}/modules/lib/default.nix" { lib = pkgs.lib; };
+  });
   tomlFormat = pkgs.formats.toml { };
 
   # Evaluate a Home Manager config with our module
+  hmModules = import "${home-manager}/modules/modules.nix" {
+    inherit pkgs lib;
+    check = false;
+  };
+
   eval = hmConfig:
     let
       result = lib.evalModules {
-        modules = [
-          home-manager.homeManagerModules.default
+        modules = hmModules ++ [
           ../modules/agent-deck.nix
           {
             home.stateVersion = "24.05";
@@ -18,7 +24,6 @@ let
           }
           hmConfig
         ];
-        specialArgs = { inherit pkgs; };
       };
     in result.config;
 
@@ -142,6 +147,39 @@ let
     };
   };
 
+  # Test: conductor enable only
+  conductorEnableConfig = getToml {
+    programs.agent-deck = {
+      enable = true;
+      conductor.enable = true;
+    };
+  };
+
+  # Test: conductor with extraConfig
+  conductorFullConfig = getToml {
+    programs.agent-deck = {
+      enable = true;
+      conductor = {
+        enable = true;
+        extraConfig = {
+          auto_respond = true;
+          telegram = {
+            bot_token = "123:ABC";
+            chat_id = "456";
+          };
+        };
+      };
+    };
+  };
+
+  # Test: conductor extraConfig without enable
+  conductorExtraOnlyConfig = getToml {
+    programs.agent-deck = {
+      enable = true;
+      conductor.extraConfig = { auto_respond = false; };
+    };
+  };
+
   # Test: worktree with custom path
   worktreeCustomConfig = getToml {
     programs.agent-deck = {
@@ -258,6 +296,7 @@ in
       && (assertNoAttr "no tools section" emptyConfig "tools")
       && (assertNoAttr "no profiles section" emptyConfig "profiles")
       && (assertNoAttr "no worktree section" emptyConfig "worktree")
+      && (assertNoAttr "no conductor section" emptyConfig "conductor")
     ) ""}
     echo "empty section omission test passed" > $out
   '';
@@ -269,6 +308,38 @@ in
       && (assertEq "default_location" worktreeConfig.worktree.default_location "subdirectory")
     ) ""}
     echo "worktree section test passed" > $out
+  '';
+
+  # Conductor enable only test
+  conductor-enable = pkgs.runCommand "test-conductor-enable" { } ''
+    ${lib.optionalString (
+      (assertHasAttr "conductor section" conductorEnableConfig "conductor")
+      && (assertEq "conductor enable" conductorEnableConfig.conductor.enable true)
+    ) ""}
+    echo "conductor enable test passed" > $out
+  '';
+
+  # Conductor with extraConfig test
+  conductor-full = pkgs.runCommand "test-conductor-full" { } ''
+    ${lib.optionalString (
+      (assertHasAttr "conductor section" conductorFullConfig "conductor")
+      && (assertEq "conductor enable" conductorFullConfig.conductor.enable true)
+      && (assertEq "conductor auto_respond" conductorFullConfig.conductor.auto_respond true)
+      && (assertHasAttr "conductor telegram" conductorFullConfig.conductor "telegram")
+      && (assertEq "telegram bot_token" conductorFullConfig.conductor.telegram.bot_token "123:ABC")
+      && (assertEq "telegram chat_id" conductorFullConfig.conductor.telegram.chat_id "456")
+    ) ""}
+    echo "conductor full test passed" > $out
+  '';
+
+  # Conductor extraConfig without enable test
+  conductor-extra-only = pkgs.runCommand "test-conductor-extra-only" { } ''
+    ${lib.optionalString (
+      (assertHasAttr "conductor section" conductorExtraOnlyConfig "conductor")
+      && (assertEq "conductor auto_respond" conductorExtraOnlyConfig.conductor.auto_respond false)
+      && (assertNoAttr "no enable key" conductorExtraOnlyConfig.conductor "enable")
+    ) ""}
+    echo "conductor extra-only test passed" > $out
   '';
 
   # Worktree custom path test

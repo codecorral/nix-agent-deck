@@ -102,6 +102,12 @@ let
       worktree = buildSection {
         inherit (cfg.worktree) defaultLocation;
       };
+      conductor = let
+        base = buildSection {
+          inherit (cfg.conductor) enable;
+        };
+      in if base == null && cfg.conductor.extraConfig == { } then null
+         else recursiveUpdate (if base == null then { } else base) cfg.conductor.extraConfig;
     }));
 
     # MCP definitions pass through as-is (already snake_case from user)
@@ -354,6 +360,20 @@ in
         type = types.nullOr (types.either (types.enum [ "sibling" "subdirectory" ]) types.str);
         default = null;
         description = ''Default worktree location: "sibling", "subdirectory", or a custom path.'';
+      };
+    };
+
+    # Conductor section
+    conductor = {
+      enable = mkOption {
+        type = types.nullOr types.bool;
+        default = null;
+        description = "Enable conductor mode.";
+      };
+      extraConfig = mkOption {
+        type = types.attrs;
+        default = { };
+        description = "Additional conductor config merged into the [conductor] section.";
       };
     };
 
