@@ -13,7 +13,7 @@ Add to your flake inputs and import the module:
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager";
-    nix-agent-deck.url = "github:github_afterthought/nix-agent-deck";
+    nix-agent-deck.url = "github:codecorral/nix-agent-deck";
     llm-agents.url = "github:asheshgoplani/llm-agents.nix";
   };
 

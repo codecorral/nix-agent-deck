@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 
 let
-  inherit (lib) mkEnableOption mkOption mkIf types filterAttrs mapAttrs' nameValuePair;
+  inherit (lib) mkEnableOption mkOption mkIf types filterAttrs mapAttrs' nameValuePair recursiveUpdate;
   cfg = config.programs.agent-deck;
   tomlFormat = pkgs.formats.toml { };
 
@@ -59,10 +59,6 @@ let
   # Remove null values from an attrset
   removeNulls = attrs:
     filterAttrs (_: v: v != null) attrs;
-
-  # Check if an attrset has any non-null values
-  hasValues = attrs:
-    (removeNulls attrs) != { };
 
   # Build a section: map keys, remove nulls, return null if empty
   buildSection = attrs:
@@ -122,7 +118,7 @@ let
       nonEmpty = filterAttrs (_: v: v != { }) mappedProfiles;
     in if nonEmpty != { } then { profiles = nonEmpty; } else { };
 
-  in topLevel // sections // mcpSection // toolSection // profileSection // cfg.extraConfig;
+  in recursiveUpdate (topLevel // sections // mcpSection // toolSection // profileSection) cfg.extraConfig;
 
   # Profile submodule type
   profileModule = types.submodule {
@@ -142,8 +138,8 @@ in
 
     defaultTool = mkOption {
       type = types.nullOr types.str;
-      default = null;
-      description = "Default AI tool to use (e.g., \"claude\", \"codex\").";
+      default = "claude";
+      description = "Default AI tool to use (e.g., \"claude\", \"codex\"). Set to null to omit.";
     };
 
     # 2.2: Shell section

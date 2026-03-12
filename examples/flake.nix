@@ -8,7 +8,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-agent-deck = {
-      url = "github:github_afterthought/nix-agent-deck";
+      url = "github:codecorral/nix-agent-deck";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     llm-agents = {

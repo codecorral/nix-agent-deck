@@ -152,7 +152,9 @@ in
   # 4.1: Minimal config evaluation test
   minimal-config = pkgs.runCommand "test-minimal-config" { } ''
     ${lib.optionalString (
-      (assertEq "minimal produces empty or near-empty config" (builtins.attrNames minimalConfig == [] || true) true)
+      (assertEq "minimal has default_tool" minimalConfig.default_tool "claude")
+      && (assertNoAttr "no shell section" minimalConfig "shell")
+      && (assertNoAttr "no claude section" minimalConfig "claude")
     ) ""}
     echo "minimal config test passed" > $out
   '';
