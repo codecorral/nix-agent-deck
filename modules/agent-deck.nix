@@ -404,10 +404,24 @@ in
       default = { };
       description = "Extra configuration merged into generated TOML. Use for options not covered by typed options.";
     };
+
+    # Declarative skill pool population
+    skillSources = mkOption {
+      type = types.attrsOf types.path;
+      default = { };
+      description = "Skill directories to symlink into ~/.agent-deck/skills/pool/. Each value must be a directory containing a SKILL.md file.";
+    };
   };
 
   config = mkIf cfg.enable {
-    home.file.".agent-deck/config.toml".source =
-      tomlFormat.generate "agent-deck-config.toml" buildConfig;
+    home.file = {
+      ".agent-deck/config.toml".source =
+        tomlFormat.generate "agent-deck-config.toml" buildConfig;
+    } // mapAttrs' (name: path:
+      nameValuePair ".agent-deck/skills/pool/${name}" {
+        source = path;
+        recursive = true;
+      }
+    ) cfg.skillSources;
   };
 }

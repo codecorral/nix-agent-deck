@@ -188,6 +188,23 @@ let
     };
   };
 
+  # Test: skillSources option
+  skillSourcesConfig = eval {
+    programs.agent-deck = {
+      enable = true;
+      skillSources = {
+        linkding = ./mock-skill-dir;
+      };
+    };
+  };
+
+  # Test: empty skillSources (no pool entries)
+  emptySkillSourcesConfig = eval {
+    programs.agent-deck = {
+      enable = true;
+    };
+  };
+
   # Assertion helpers
   assertEq = name: actual: expected:
     if actual == expected then true
@@ -349,5 +366,23 @@ in
       && (assertEq "custom default_location" worktreeCustomConfig.worktree.default_location "/tmp/worktrees")
     ) ""}
     echo "worktree custom path test passed" > $out
+  '';
+
+  # skillSources symlink generation test
+  skill-sources = pkgs.runCommand "test-skill-sources" { } ''
+    ${lib.optionalString (
+      (assertHasAttr "pool entry" skillSourcesConfig.home.file ".agent-deck/skills/pool/linkding")
+      && (assertHasAttr "config still present" skillSourcesConfig.home.file ".agent-deck/config.toml")
+    ) ""}
+    echo "skill sources test passed" > $out
+  '';
+
+  # Empty skillSources test (no pool entries)
+  skill-sources-empty = pkgs.runCommand "test-skill-sources-empty" { } ''
+    ${lib.optionalString (
+      (assertNoAttr "no pool entries" emptySkillSourcesConfig.home.file ".agent-deck/skills/pool/linkding")
+      && (assertHasAttr "config still present" emptySkillSourcesConfig.home.file ".agent-deck/config.toml")
+    ) ""}
+    echo "skill sources empty test passed" > $out
   '';
 }
